@@ -1,19 +1,37 @@
-- name: Deploy student app in PROD
-  hosts: all
-  become: yes
-  vars:
-    URL: URL-LOC
-  tasks:
-    - name: Remove the old war files
-      file:
-        name: "/opt/apache-tomcat-9.0.1/webapps/{{item}}"
-        state: absent
-      with_items:
-        - student
-        - student.war
-    - name: Download war file
-      get_url:
-        url: "{{URL}}"
-        dest: /opt/apache-tomcat-9.0.1/webapps/student.war
-        
-        ## test ##
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-deployment
+  labels:
+     app: javaapp
+     type: front-end
+spec:
+  template:
+     metadata:
+       name: javawar-pod
+       labels: 
+         app: javaapp
+         type: front-end
+     spec:
+         containers:
+           - name: tomcatimage
+             image: "arjundevsecops/mavenrepo:latest"
+  replicas: 1
+  selector:
+    matchLabels:
+      type: front-end
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-service
+spec:
+  selector:
+    app: javawar
+  type: LoadBalancer  
+  ports:
+    - protocol: TCP
+      targetPort: 3000
+      port: 80
+      nodePort: 30000
